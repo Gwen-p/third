@@ -31,8 +31,8 @@ jobs:
           (sleep 5 && ./gradlew test --tests "*IntegrationTests" --continue --no-daemon) || \
           (sleep 10 && ./gradlew test --tests "*IntegrationTests" --continue --no-daemon)
 
-      - name: Run unit tests
-        run: ./gradlew test --tests "*UnitTest" --continue --no-daemon
+      - name: Run all tests
+        run: ./gradlew test --continue --no-daemon
 
       - name: Upload test reports
         uses: actions/upload-artifact@v4
