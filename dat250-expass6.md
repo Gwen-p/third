@@ -1,36 +1,49 @@
 # DAT250: Software Technology Experiment Assignment 3 - Report
 
 ## Project Overview
-I made some changes respect the previous project, changing the relation between classes and the test implementation. I decided to do that after understanding the correct relation between classes give by the UML diagram of the first task. Also, the examples on gitHub of the lectures helps me to understand it.
 
-**GitHub Repository for the previous project**: [https://github.com/Gwen-p/DAT250_expass2](https://github.com/Gwen-p/DAT250_expass2)
-**GitHub Repository for the actual project**: [https://github.com/Gwen-p/third](https://github.com/Gwen-p/third)
+For this assignment, I refactored the domain model and test implementation based on a better understanding of the class relationships from the UML diagram provided in the first task. The GitHub examples from the course lectures were particularly helpful in guiding these improvements.
 
-## UML diagram
+**GitHub Repository for the previous project**: [https://github.com/Gwen-p/DAT250_expass2](https://github.com/Gwen-p/DAT250_expass2)  
+**GitHub Repository for the current project**: [https://github.com/Gwen-p/third](https://github.com/Gwen-p/third)
 
 ## Technical Implementation
 
 ### Domain Model
-The application implements a version the domain model in the assignment but with :
-- **User**: Users with username (used as an ID) and email who can create polls and vote. 
-- **Poll**: Voting polls containing questions, validity period, and voting options.
-- **VoteOption**: Individual options within a poll with caption and presentation order.
-- **Vote**: Records of user votes with timestamps and user associations.
+The application implements the following domain model:
 
+- **User**: Represents users with a username (used as ID) and email. Users can create polls and vote.
+- **Poll**: Represents voting polls containing questions, a validity period, and voting options.
+- **VoteOption**: Individual options within a poll, each with a caption and presentation order.
+- **Vote**: Records user votes with timestamps and associations to both users and vote options.
+
+### Code Structure
+The project is organized with clear separation between entities, services, and REST endpoints. JPA annotations define the relationships between entities (e.g., `@OneToMany`, `@ManyToOne`), ensuring proper persistence and retrieval.
+
+### Key Features
+- **RESTful API**: Endpoints for creating polls, adding vote options, submitting votes, and retrieving poll results.
+- **Persistence**: Using JPA with Hibernate as the ORM provider. Database configuration is handled via `persistence.xml`.
+- **Testing**: JUnit tests verify the correctness of the domain model and API endpoints.
 
 ## Technical Problems Encountered
 
-### 1. Decide the logic of the users login
-**Problem**: 
+### 1. Deciding the Logic for User Login
+**Problem**: Initially, I was uncertain about how to handle user authentication and session management. The assignment did not specify whether to implement a full login system or use a simpler approach.
 
-**Solution**: 
+**Solution**: After reviewing the requirements, I realized that a lightweight approach would suffice. I used the username as a unique identifier and did not implement password-based authentication. Each vote is associated with a user via their username, ensuring that users can only vote once per poll (as required).
 
+### 2. Mapping Relationships in JPA
+**Problem**: Correctly defining the relationships between `User`, `Poll`, `VoteOption`, and `Vote` was challenging. I initially struggled with bidirectional mappings and cascade operations.
 
+**Solution**: I studied the lecture examples and adjusted the mappings accordingly. For instance:
+- `Poll` has a `@OneToMany` relationship with `VoteOption`.
+- `Vote` has `@ManyToOne` relationships with both `User` and `VoteOption`.
+- Cascade settings were configured to propagate operations where necessary (e.g., persisting `VoteOption` when a `Poll` is persisted).
 
 ## Pending Issues
-
-improve the look of the page 
-
+- Improve the frontend appearance: The current UI is functional but basic. Enhancing the visual design would improve user experience.
+- Add input validation: Additional checks for user inputs (e.g., duplicate usernames, invalid dates) would make the application more robust.
+- Implement pagination: For retrieving polls or votes, pagination would be useful when the data grows.
 
 ## Conclusion
-The videos of the lectures where really useful to understand how to create the initial files. 
+The lectures and GitHub examples provided valuable guidance for understanding JPA relationships and REST implementation. The refactored domain model now accurately reflects the intended design, and the application meets the core requirements. Future work will focus on enhancing the UI and adding validation features.
