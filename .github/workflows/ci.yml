@@ -1,0 +1,42 @@
+name: Java CI with Gradle
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Run tests with retry for flaky tests
+        run: |
+          ./gradlew test --tests "*IntegrationTests" --continue --no-daemon || \
+          (sleep 5 && ./gradlew test --tests "*IntegrationTests" --continue --no-daemon) || \
+          (sleep 10 && ./gradlew test --tests "*IntegrationTests" --continue --no-daemon)
+
+      - name: Run unit tests
+        run: ./gradlew test --tests "*UnitTest" --continue --no-daemon
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-reports
+          path: build/reports/tests/

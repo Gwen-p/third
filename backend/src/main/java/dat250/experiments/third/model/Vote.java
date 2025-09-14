@@ -37,7 +37,9 @@ public class Vote {
 
     public void setUser(User user) {
         this.user = user;
-        this.user.getMyVotes().add(this);
+        if(user != null) {
+            this.user.getMyVotes().add(this);
+        }
     }
 
     public VoteOption getOption() {
