@@ -35,7 +35,7 @@ jobs:
         run: ./gradlew test --tests "*UnitTest" --continue --no-daemon
 
       - name: Upload test reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: test-reports
