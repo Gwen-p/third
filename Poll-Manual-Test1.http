@@ -1,0 +1,58 @@
+
+### 1 Create a new user
+POST http://localhost:8080/users
+Content-Type: application/json
+
+{
+  "username": "alice",
+  "email": "alice@example.com"
+}
+
+### 2 List all users (-> shows the newly created user)
+GET http://localhost:8080/users
+
+### 3 Create another user
+POST 127.0.0.1:8080/users
+Content-Type: application/json
+
+{
+  "username": "marco",
+  "email": "marco@example.com"
+}
+
+### 4 List all users again (-> shows two users)
+GET http://localhost:8080/users
+
+### 5 User 1 creates a new poll
+POST http://localhost:8080/polls/alice
+Content-Type: application/json
+
+{
+  "question": "What is your favourite animal?",
+  "validUntil": "2030-09-10T10:00:00Z",
+  "options": [
+    {"caption": "Giraffe", "presentationOrder": 1},
+    {"caption": "Snake", "presentationOrder": 2}
+  ]
+}
+
+### 6 List polls (-> shows the new poll)
+GET http://localhost:8080/polls
+
+### 7 User 2 votes on the poll
+POST http://localhost:8080/votes/1/1/marco
+
+### 8 Anonymous user votes on the poll
+POST http://localhost:8080/votes/1/1
+
+### 9 User 2 changes his vote
+PUT http://localhost:8080/votes/1/1/2
+
+### 10 List votes from a poll(-> shows the most recent vote for User 2)
+GET http://localhost:8080/votes/1
+
+### 11 Delete the poll by id
+DELETE http://localhost:8080/polls/1
+
+### 12 List votes from a poll(-> not found)
+GET http://localhost:8080/votes/1
