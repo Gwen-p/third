@@ -60,7 +60,7 @@ public class Poll {
 
     public void addVoteOption(VoteOption voteOption) {
         if (voteOption != null) {
-            voteOption.setPresentationOrder(options.size() + 1);
+            voteOption.setPresentationOrder(options.size());
             this.options.add(voteOption);
         }
     }

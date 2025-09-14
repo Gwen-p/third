@@ -1,47 +1,80 @@
 <script>
-  import svelteLogo from './assets/svelte.svg'
-  import viteLogo from '/vite.svg'
-  import Counter from './lib/Counter.svelte'
+    import CreateUser from './lib/CreateUser.svelte';
+    import CreatePoll from './lib/CreatePoll.svelte';
+    import Vote from './lib/Vote.svelte';
+
+    let currentView = 'vote';
 </script>
 
 <main>
-  <div>
-    <a href="https://vite.dev" target="_blank" rel="noreferrer">
-      <img src={viteLogo} class="logo" alt="Vite Logo" />
-    </a>
-    <a href="https://svelte.dev" target="_blank" rel="noreferrer">
-      <img src={svelteLogo} class="logo svelte" alt="Svelte Logo" />
-    </a>
-  </div>
-  <h1>Vite + Svelte</h1>
+    <h1>Polls system</h1>
 
-  <div class="card">
-    <Counter />
-  </div>
+    <nav class="navigation">
+        <button class:active={currentView === 'user'} on:click={() => currentView = 'user'}>
+            Create User
+        </button>
+        <button class:active={currentView === 'poll'} on:click={() => currentView = 'poll'}>
+            Create Poll
+        </button>
+        <button class:active={currentView === 'vote'} on:click={() => currentView = 'vote'}>
+            Vote
+        </button>
+    </nav>
 
-  <p>
-    Check out <a href="https://github.com/sveltejs/kit#readme" target="_blank" rel="noreferrer">SvelteKit</a>, the official Svelte app framework powered by Vite!
-  </p>
-
-  <p class="read-the-docs">
-    Click on the Vite and Svelte logos to learn more
-  </p>
+    <div class="content">
+        {#if currentView === 'user'}
+            <CreateUser />
+        {:else if currentView === 'poll'}
+            <CreatePoll />
+        {:else}
+            <Vote />
+        {/if}
+    </div>
 </main>
 
 <style>
-  .logo {
-    height: 6em;
-    padding: 1.5em;
-    will-change: filter;
-    transition: filter 300ms;
-  }
-  .logo:hover {
-    filter: drop-shadow(0 0 2em #646cffaa);
-  }
-  .logo.svelte:hover {
-    filter: drop-shadow(0 0 2em #ff3e00aa);
-  }
-  .read-the-docs {
-    color: #888;
-  }
+    main {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+    }
+
+    .navigation {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 30px;
+        gap: 10px;
+    }
+
+    .navigation button {
+        padding: 12px 20px;
+        border: 2px solid #007acc;
+        background: white;
+        color: #007acc;
+        cursor: pointer;
+        border-radius: 5px;
+        font-weight: bold;
+        transition: all 0.3s;
+    }
+
+    .navigation button:hover {
+        background: #007acc;
+        color: white;
+    }
+
+    .navigation button.active {
+        background: #007acc;
+        color: white;
+    }
+
+    .content {
+        min-height: 400px;
+    }
+
+    h1 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 30px;
+    }
 </style>

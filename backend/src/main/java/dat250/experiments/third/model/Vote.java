@@ -8,7 +8,7 @@ import java.time.Instant;
 
 @JsonIdentityInfo(
         generator = ObjectIdGenerators.PropertyGenerator.class,
-        property = "id"
+        property = "publishedAt"
 )
 public class Vote {
 

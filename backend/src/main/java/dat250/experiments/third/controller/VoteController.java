@@ -10,7 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.Collection;
-
+@CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/votes")
 public class VoteController {
