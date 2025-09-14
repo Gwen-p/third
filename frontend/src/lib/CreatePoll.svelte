@@ -1,8 +1,11 @@
 <script>
+
+    export let selectedUser = '';
+    export let users = [];
+
     let question = '';
     let validUntil = '';
     let options = [{ caption: '', presentationOrder: 1 }];
-    let username = '';
     let message = '';
 
     function addOption() {
@@ -15,21 +18,19 @@
     }
 
     async function createPoll() {
-        try {
-            // verify user exist
-            const userResponse = await fetch(`http://localhost:8080/users/${username}`);
-            if (!userResponse.ok) {
-                message = 'User not found';
-                return;
-            }
+        if (!selectedUser) {
+            message = 'Select a user to create polls';
+            return;
+        }
 
+        try {
             const pollData = {
                 question,
-                validUntil: validUntil ? new Date(validUntil).toISOString() : '2030-12-31T23:59',
+                validUntil: validUntil ? new Date(validUntil).toISOString() : '2030-12-31T23:59:59Z',
                 options: options.filter(opt => opt.caption.trim() !== '')
             };
 
-            const response = await fetch(`http://localhost:8080/polls/${username}`, {
+            const response = await fetch(`/polls/${selectedUser}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -38,13 +39,13 @@
             });
 
             if (response.ok) {
-                message = 'Succeeded creation poll!';
+                message = 'Poll created successfully!';
                 question = '';
                 validUntil = '';
                 options = [{ caption: '', presentationOrder: 1 }];
-                username = '';
             } else {
-                message = 'Error creating a poll';
+                const errorText = await response.text();
+                message = `Error creating a new poll: ${errorText}`;
             }
         } catch (error) {
             message = 'Connection error';
@@ -53,10 +54,16 @@
 </script>
 
 <div class="poll-form">
-    <h2>Create poll</h2>
+    <h2>Create polls</h2>
+
+    {#if !selectedUser}
+        <p class="warning">Select a user to create polls</p>
+    {:else}
+        <p class="info">Creating polls as: <strong>{selectedUser}</strong></p>
+    {/if}
+
     <form on:submit|preventDefault={createPoll}>
-        <input type="text" bind:value={username} placeholder="Creator user name" required />
-        <input type="text" bind:value={question} placeholder="Question to be asked" required />
+        <input type="text" bind:value={question} placeholder="Question for the poll" required />
         <input type="datetime-local" bind:value={validUntil} placeholder="Valid until" />
 
         <h3>Options:</h3>
@@ -74,7 +81,7 @@
         {/each}
 
         <button type="button" on:click={addOption}>Add option</button>
-        <button type="submit">Create poll</button>
+        <button type="submit" disabled={!selectedUser}>Create poll</button>
     </form>
     {#if message}
         <p class="{message.includes('Error') ? 'error' : 'success'}">{message}</p>
@@ -88,16 +95,54 @@
         border: 1px solid #ccc;
         border-radius: 5px;
     }
+
+    .warning {
+        color: orange;
+        font-weight: bold;
+        background-color: #fff8e1;
+        padding: 10px;
+        border-radius: 4px;
+        border: 1px solid #ffd54f;
+    }
+
+    .info {
+        color: #666;
+        background-color: #e3f2fd;
+        padding: 10px;
+        border-radius: 4px;
+        border: 1px solid #bbdefb;
+    }
+
     input, button {
         margin: 5px;
         padding: 8px;
     }
+
     .option-row {
         display: flex;
         align-items: center;
         gap: 10px;
         margin: 5px 0;
     }
-    .error { color: red; }
-    .success { color: green; }
+
+    .error {
+        color: red;
+        background-color: #ffebee;
+        padding: 10px;
+        border-radius: 4px;
+        border: 1px solid #ffcdd2;
+    }
+
+    .success {
+        color: green;
+        background-color: #e8f5e8;
+        padding: 10px;
+        border-radius: 4px;
+        border: 1px solid #c8e6c9;
+    }
+
+    button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
 </style>

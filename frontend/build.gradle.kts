@@ -1,8 +1,8 @@
 import com.github.gradle.node.npm.task.NpmTask
 
-plugins {
-    id("com.github.node-gradle.node") version "7.0.2"
-}
+        plugins {
+            id("com.github.node-gradle.node") version "7.0.2"
+        }
 
 node {
     version = "22.0.0"

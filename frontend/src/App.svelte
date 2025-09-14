@@ -2,19 +2,64 @@
     import CreateUser from './lib/CreateUser.svelte';
     import CreatePoll from './lib/CreatePoll.svelte';
     import Vote from './lib/Vote.svelte';
+    import UserSelector from './lib/UserSelector.svelte';
 
     let currentView = 'vote';
+    let selectedUser = '';
+    let users = [];
+
+    function handleUserCreated() {
+        // Forzar actualización de la lista de usuarios
+        setTimeout(() => {
+            const userSelector = document.querySelector('user-selector');
+            if (userSelector && userSelector.updateUsers) {
+                userSelector.updateUsers();
+            }
+        }, 100);
+    }
+
+    function handleUsersUpdated() {
+        fetchUsers();
+    }
+
+    async function fetchUsers() {
+        try {
+            const response = await fetch('/users');
+            if (response.ok) {
+                users = await response.json();
+            }
+        } catch (error) {
+            console.error('Error fetching users:', error);
+        }
+    }
 </script>
 
 <main>
-    <h1>Polls system</h1>
+    <h1>Sistema de Encuestas - DAT250</h1>
+
+    <!-- Selector de usuarios -->
+    <UserSelector
+            bind:selectedUser
+            bind:users
+            on:usersUpdated={handleUsersUpdated}
+    />
 
     <nav class="navigation">
         <button class:active={currentView === 'user'} on:click={() => currentView = 'user'}>
-            Create User
+            Create user
         </button>
-        <button class:active={currentView === 'poll'} on:click={() => currentView = 'poll'}>
-            Create Poll
+        <button
+                class:active={currentView === 'poll'}
+                on:click={() => {
+                if (selectedUser === '') {
+                    alert('User needed to create polls');
+                    return;
+                }
+                currentView = 'poll';
+            }}
+                disabled={selectedUser === ''}
+        >
+            Polls
         </button>
         <button class:active={currentView === 'vote'} on:click={() => currentView = 'vote'}>
             Vote
@@ -23,11 +68,11 @@
 
     <div class="content">
         {#if currentView === 'user'}
-            <CreateUser />
+            <CreateUser on:userCreated={handleUserCreated} {selectedUser} />
         {:else if currentView === 'poll'}
-            <CreatePoll />
+            <CreatePoll {selectedUser} {users} />
         {:else}
-            <Vote />
+            <Vote {selectedUser} {users} />
         {/if}
     </div>
 </main>
@@ -58,7 +103,7 @@
         transition: all 0.3s;
     }
 
-    .navigation button:hover {
+    .navigation button:hover:not(:disabled) {
         background: #007acc;
         color: white;
     }
@@ -66,6 +111,13 @@
     .navigation button.active {
         background: #007acc;
         color: white;
+    }
+
+    .navigation button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        border-color: #ccc;
+        color: #ccc;
     }
 
     .content {
