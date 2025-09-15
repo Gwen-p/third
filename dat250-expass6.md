@@ -18,7 +18,7 @@ The application implements the following domain model:
 - **Vote**: Records user votes with timestamps and associations to both users and vote options.
 
 ### Code Structure
-The project is organized with clear separation between entities, services, and REST endpoints. JPA annotations define the relationships between entities (e.g., `@OneToMany`, `@ManyToOne`), ensuring proper persistence and retrieval.
+The project is organized with clear separation between entities, services, and REST endpoints. JPA annotations define the relationships between entities, ensuring proper persistence and retrieval.
 
 ### Key Features
 - **RESTful API**: Endpoints for creating polls, adding vote options, submitting votes, and retrieving poll results.
@@ -41,9 +41,9 @@ The project is organized with clear separation between entities, services, and R
 - Cascade settings were configured to propagate operations where necessary (e.g., persisting `VoteOption` when a `Poll` is persisted).
 
 ## Pending Issues
-- Improve the frontend appearance: The current UI is functional but basic. Enhancing the visual design would improve user experience.
-- Add input validation: Additional checks for user inputs (e.g., duplicate usernames, invalid dates) would make the application more robust.
-- Implement pagination: For retrieving polls or votes, pagination would be useful when the data grows.
+- Currently, users are not correctly assigned as the owners of the polls or votes they create. This prevents them from accessing the delete and modify functions.
+- I already integrate the API into the code base of my Poll App, but i will have to undo it to fix the previous problem.
+- Improve the frontend appearance: The current UI is functional but basic. Enhancing the visual design would improve user experience by adding the whole style in a .css file. 
 
 ## Conclusion
-The lectures and GitHub examples provided valuable guidance for understanding JPA relationships and REST implementation. The refactored domain model now accurately reflects the intended design, and the application meets the core requirements. Future work will focus on enhancing the UI and adding validation features.
+The lectures and GitHub examples provided valuable guidance for understanding JPA relationships and REST implementation. The refactored domain model now accurately reflects the intended design, and the application meets the core requirements. Future work will focus on solving actual problems of the code and improving the visual desing.
