@@ -20,11 +20,6 @@ The application implements the following domain model:
 ### Code Structure
 The project is organized with clear separation between entities, services, and REST endpoints. JPA annotations define the relationships between entities, ensuring proper persistence and retrieval.
 
-### Key Features
-- **RESTful API**: Endpoints for creating polls, adding vote options, submitting votes, and retrieving poll results.
-- **Persistence**: Using JPA with Hibernate as the ORM provider. Database configuration is handled via `persistence.xml`.
-- **Testing**: JUnit tests verify the correctness of the domain model and API endpoints.
-
 ## Technical Problems Encountered
 
 ### 1. Deciding the Logic for User Login
