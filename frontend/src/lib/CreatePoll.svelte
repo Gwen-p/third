@@ -1,148 +1,196 @@
+<!-- lib/CreatePoll.svelte -->
 <script>
+    // Import API configuration
+    import { getContext } from 'svelte';
+    import { API_BASE } from '../config.js';
 
-    export let selectedUser = '';
-    export let users = [];
+    const currentUser = getContext('currentUser');
 
-    let question = '';
+    // Reactive variable for new poll question
+    let newPollQuestion = '';
+
+    // Reactive array for poll options
+    let options = [''];
+
+    // Reactive variable for valid until date
     let validUntil = '';
-    let options = [{ caption: '', presentationOrder: 1 }];
+
+    // Reactive variable for feedback messages
     let message = '';
 
+    // Reactive variable for loading state
+    let isLoading = false;
+
+    // Function to add a new option field
     function addOption() {
-        options = [...options, { caption: '', presentationOrder: options.length + 1 }];
+        // Add empty string to options array
+        options = [...options, ''];
     }
 
+    // Function to remove an option field
     function removeOption(index) {
+        // Filter out the option at the specified index
         options = options.filter((_, i) => i !== index);
-        options = options.map((opt, i) => ({ ...opt, presentationOrder: i + 1 }));
     }
 
+    // Function to handle option input change
+    function handleOptionChange(index, value) {
+        // Update the option at the specified index
+        options = options.map((opt, i) => i === index ? value : opt);
+    }
+
+    // Function to calculate default date (7 days from now)
+    function getDefaultDate() {
+        const date = new Date();
+        date.setDate(date.getDate() + 7);
+        return date.toISOString().split('T')[0];
+    }
+
+    // Initialize validUntil with default date
+    $: if (!validUntil) {
+        validUntil = getDefaultDate();
+    }
+
+    // Function to create a new poll
     async function createPoll() {
-        if (!selectedUser) {
-            message = 'Select a user to create polls';
+        // Check if question is not empty
+        if (!newPollQuestion.trim()) {
+            message = 'Poll question cannot be empty!';
             return;
         }
 
-        try {
-            const pollData = {
-                question,
-                validUntil: validUntil ? new Date(validUntil).toISOString() : '2030-12-31T23:59:59Z',
-                options: options.filter(opt => opt.caption.trim() !== '')
-            };
+        // Check if valid until date is selected
+        if (!validUntil) {
+            message = 'Please select a valid until date!';
+            return;
+        }
 
-            const response = await fetch(`/polls/${selectedUser}`, {
+        // Filter out empty options
+        const validOptions = options.filter(opt => opt.trim());
+
+        // Check if there are at least 2 options
+        if (validOptions.length < 2) {
+            message = 'Poll must have at least 2 options!';
+            return;
+        }
+
+        // Set loading state to true
+        isLoading = true;
+
+        try {
+            // Determine the user ID (either 'unknown' or actual user ID)
+            const userId = $currentUser === 'unknown' ? 'unknown' : $currentUser;
+
+            // Convert date string to ISO format
+            const validUntilDate = new Date(validUntil + 'T23:59:59');
+
+            // Send POST request to create poll API endpoint using API_BASE
+            const response = await fetch(`${API_BASE}/polls/${userId}`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(pollData)
+                body: JSON.stringify({
+                    question: newPollQuestion,
+                    options: validOptions.map((caption, index) => ({
+                        caption: caption,
+                        presentationOrder: index + 1
+                    })),
+                    validUntil: validUntilDate.toISOString()
+                })
             });
 
+            // Check if response is successful
             if (response.ok) {
-                message = 'Poll created successfully!';
-                question = '';
-                validUntil = '';
-                options = [{ caption: '', presentationOrder: 1 }];
+                // Parse response JSON data
+                const newPoll = await response.json();
+
+                // Show success message
+                message = `Poll "${newPollQuestion}" created successfully!`;
+
+                // Reset form fields
+                newPollQuestion = '';
+                options = [''];
+                validUntil = getDefaultDate();
             } else {
-                const errorText = await response.text();
-                message = `Error creating a new poll: ${errorText}`;
+                // Parse error response
+                const error = await response.json();
+
+                // Show error message
+                message = error.message || 'Failed to create poll!';
             }
         } catch (error) {
-            message = 'Connection error';
+            // Log any network errors
+            console.error('Error creating poll:', error);
+            message = 'Network error. Please try again.';
+        } finally {
+            // Set loading state to false regardless of outcome
+            isLoading = false;
         }
     }
 </script>
 
-<div class="poll-form">
-    <h2>Create polls</h2>
+<div class="component">
+    <h2>Create Polls</h2>
 
-    {#if !selectedUser}
-        <p class="warning">Select a user to create polls</p>
-    {:else}
-        <p class="info">Creating polls as: <strong>{selectedUser}</strong></p>
-    {/if}
+    {#if $currentUser === 'unknown'}
+        <p>Only users can create new polls.</p>
+    {:else }
+        <div class="form-group">
+            <label for="question">Poll Question:</label>
+            <input
+                    id="question"
+                    type="text"
+                    bind:value={newPollQuestion}
+                    placeholder="Enter your question"
+                    disabled={isLoading}
+            />
+        </div>
 
-    <form on:submit|preventDefault={createPoll}>
-        <input type="text" bind:value={question} placeholder="Question for the poll" required />
-        <input type="datetime-local" bind:value={validUntil} placeholder="Valid until" />
+        <div class="form-group">
+            <label for="validUntil">Valid Until:</label>
+            <p>Select until when this poll will be active:</p>
+            <input
+                    id="validUntil"
+                    type="date"
+                    bind:value={validUntil}
+                    min={new Date().toISOString().split('T')[0]}
+                    disabled={isLoading}
+            />
+        </div>
 
         <h3>Options:</h3>
-        {#each options as option, index}
-            <div class="option-row">
+
+        <!-- Iterate over options array to create input fields -->
+        {#each options as _, index}
+            <div class="option-group">
                 <input
                         type="text"
-                        bind:value={option.caption}
+                        bind:value={options[index]}
+                        on:input={(e) => handleOptionChange(index, e.target.value)}
                         placeholder={`Option ${index + 1}`}
+                        disabled={isLoading}
                 />
+
+                <!-- Show remove button if there are more than one option -->
                 {#if options.length > 1}
-                    <button type="button" on:click={() => removeOption(index)}>Delete</button>
+                    <button on:click={() => removeOption(index)} class="btn-remove" disabled={isLoading}>Remove</button>
                 {/if}
             </div>
         {/each}
 
-        <button type="button" on:click={addOption}>Add option</button>
-        <button type="submit" disabled={!selectedUser}>Create poll</button>
-    </form>
-    {#if message}
-        <p class="{message.includes('Error') ? 'error' : 'success'}">{message}</p>
+        <button on:click={addOption} class="btn-secondary" disabled={isLoading}>Add Option</button>
+        <button on:click={createPoll} class="btn-primary" disabled={isLoading}>
+            {#if isLoading}
+                Creating...
+            {:else}
+                Create Poll
+            {/if}
+        </button>
+
+        <!-- Display message if exists -->
+        {#if message}
+            <p class:success={message.includes('successfully')} class:error={!message.includes('successfully')}>{message}</p>
+        {/if}
     {/if}
 </div>
-
-<style>
-    .poll-form {
-        margin: 20px;
-        padding: 20px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-    }
-
-    .warning {
-        color: orange;
-        font-weight: bold;
-        background-color: #fff8e1;
-        padding: 10px;
-        border-radius: 4px;
-        border: 1px solid #ffd54f;
-    }
-
-    .info {
-        color: #666;
-        background-color: #e3f2fd;
-        padding: 10px;
-        border-radius: 4px;
-        border: 1px solid #bbdefb;
-    }
-
-    input, button {
-        margin: 5px;
-        padding: 8px;
-    }
-
-    .option-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin: 5px 0;
-    }
-
-    .error {
-        color: red;
-        background-color: #ffebee;
-        padding: 10px;
-        border-radius: 4px;
-        border: 1px solid #ffcdd2;
-    }
-
-    .success {
-        color: green;
-        background-color: #e8f5e8;
-        padding: 10px;
-        border-radius: 4px;
-        border: 1px solid #c8e6c9;
-    }
-
-    button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-</style>

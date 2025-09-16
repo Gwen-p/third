@@ -1,128 +1,125 @@
+<!-- lib/CreateUser.svelte -->
 <script>
+    // Import Svelte event dispatcher
+    import { getContext } from 'svelte';
+
     import { createEventDispatcher } from 'svelte';
 
-    const dispatch = createEventDispatcher();
-    export let selectedUser = '';
+    // Import API configuration
+    import { API_BASE } from '../config.js';
 
-    let username = '';
-    let email = '';
+    const currentUser = getContext('currentUser');
+
+    // Create event dispatcher
+    const dispatch = createEventDispatcher();
+
+    // Reactive variable for new user name
+    let newUserName = '';
+
+    // Reactive variable for new user email
+    let newUserEmail = '';
+
+    // Reactive variable for feedback messages
     let message = '';
 
+    // Reactive variable for loading state
+    let isLoading = false;
+
+    // Function to handle user creation
     async function createUser() {
-        if (selectedUser !== '') {
-            message = 'Need to be as Unknow to create users';
+        // Check if username is not empty
+        if (!newUserName.trim()) {
+            message = 'Username cannot be empty!';
             return;
         }
 
+        // Set loading state to true
+        isLoading = true;
+        message = '';
+
         try {
-            const response = await fetch(`/users`, {
+            // Send POST request to create user API endpoint using API_BASE
+            const response = await fetch(`${API_BASE}/users`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ username, email })
+                body: JSON.stringify({
+                    username: newUserName,
+                    email: newUserEmail})
             });
 
+            // Check if response is successful
             if (response.ok) {
-                message = 'User created successfully!';
-                username = '';
-                email = '';
-                dispatch('userCreated');
-            } else if (response.status === 403) {
-                message = 'User already exists';
+                // Parse response JSON data
+                const newUser = await response.json();
+
+                // Show success message
+                message = `User "${newUserName}" created successfully!`;
+
+                // Dispatch event with the created user data
+                dispatch('user-created',  { user: newUser });
+
+                // Reset both fields
+                newUserName = '';
+                newUserEmail = '';
             } else {
-                message = 'Error creating a user';
+                // Parse error response
+                const error = await response.json();
+
+                // Show error message
+                message = error.message || 'Failed to create user!';
             }
         } catch (error) {
-            message = 'Connection error';
+            // Log any network errors
+            console.error('Error creating user:', error);
+            message = 'Network error. Please try again.';
+        } finally {
+            // Set loading state to false regardless of outcome
+            isLoading = false;
         }
     }
 </script>
 
-<div class="user-form">
-    <h2>Create user</h2>
+<div class="component">
+    <h2>Create Users</h2>
 
-    {#if selectedUser !== ''}
-        <p class="warning">Need to be Unknown to create users</p>
-    {:else}
-        <p class="info">Creation of users</p>
-    {/if}
+    <!-- Only show user creation form when current user is "unknown" -->
+    {#if $currentUser === 'unknown'}
+        <div class="form-group">
+            <label for="username">Username:</label>
+            <input
+                    id="username"
+                    type="text"
+                    bind:value={newUserName}
+                    placeholder="Enter username"
+                    disabled={isLoading}
+            />
+        </div>
+        <div class="form-group">
+            <label for="username">Email:</label>
+            <input
+                    type="email"
+                    id="email"
+                    bind:value={newUserEmail}
+                    placeholder="Enter email"
+                    disabled={isLoading}
+            />
+        </div>
 
-    <form on:submit|preventDefault={createUser}>
-        <input
-                type="text"
-                bind:value={username}
-                placeholder="User name"
-                required
-                disabled={selectedUser !== ''}
-        />
-        <input
-                type="email"
-                bind:value={email}
-                placeholder="Email"
-                required
-                disabled={selectedUser !== ''}
-        />
-        <button type="submit" disabled={selectedUser !== ''}>
-            Create user
+        <button on:click={createUser} class="btn-primary" disabled={isLoading}>
+            {#if isLoading}
+                Creating...
+            {:else}
+                Create User
+            {/if}
         </button>
-    </form>
-    {#if message}
-        <p class="{message.includes('Error') || message.includes('Debes') ? 'error' : 'success'}">{message}</p>
+
+        <!-- Display message if exists -->
+        {#if message}
+            <p class:success={message.includes('successfully')} class:error={!message.includes('successfully')}>{message}</p>
+        {/if}
+    {:else}
+        <p>Only Unknown can create new users.</p>
     {/if}
 </div>
-
-<style>
-    .user-form {
-        margin: 20px;
-        padding: 20px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-    }
-
-    .warning {
-        color: orange;
-        font-weight: bold;
-        background-color: #fff8e1;
-        padding: 10px;
-        border-radius: 4px;
-        border: 1px solid #ffd54f;
-    }
-
-    .info {
-        color: #666;
-        background-color: #e3f2fd;
-        padding: 10px;
-        border-radius: 4px;
-        border: 1px solid #bbdefb;
-    }
-
-    input, button {
-        margin: 5px;
-        padding: 8px;
-        display: block;
-        width: 100%;
-        max-width: 300px;
-    }
-
-    input:disabled, button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .error {
-        color: red;
-        background-color: #ffebee;
-        padding: 10px;
-        border-radius: 4px;
-        border: 1px solid #ffcdd2;
-    }
-
-    .success {
-        color: green;
-        background-color: #e8f5e8;
-        padding: 10px;
-        border-radius: 4px;
-        border: 1px solid #c8e6c9;
-    }
-</style>

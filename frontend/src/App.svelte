@@ -1,132 +1,118 @@
+<!-- App.svelte -->
 <script>
-    import CreateUser from './lib/CreateUser.svelte';
-    import CreatePoll from './lib/CreatePoll.svelte';
-    import Vote from './lib/Vote.svelte';
+    // Import the writable store from Svelte for state management
+    import { writable } from 'svelte/store';
+    // Import setContext from Svelte to provide data to child components
+    import { setContext } from 'svelte';
+
+    // Import the UserSelector component for user selection
     import UserSelector from './lib/UserSelector.svelte';
+    // Import the CreateUsers component for user creation
+    import CreateUsers from './lib/CreateUser.svelte';
+    // Import the CreatePolls component for poll creation
+    import CreatePolls from './lib/CreatePoll.svelte';
+    // Import the VotePolls component for voting functionality
+    import VotePolls from './lib/Vote.svelte';
 
-    let currentView = 'vote';
-    let selectedUser = '';
-    let users = [];
+    // Create a writable store to track the current user, defaulting to 'unknown'
+    const currentUser = writable('unknown');
 
-    function handleUserCreated() {
-        // Forzar actualización de la lista de usuarios
-        setTimeout(() => {
-            const userSelector = document.querySelector('user-selector');
-            if (userSelector && userSelector.updateUsers) {
-                userSelector.updateUsers();
-            }
-        }, 100);
+    // Provide the currentUser store to all child components via context API
+    setContext('currentUser', currentUser);
+
+    // Reactive variable to track which view is currently active, defaulting to 'vote'
+    let activeView = 'vote';
+
+    // Store for refresh function from UserSelector
+    let userSelectorRefresh = () => {};
+
+    // Function to handle when a user is selected from the UserSelector component
+    function handleUserSelect(event) {
+        // Extract the user ID from the event details
+        const { username, email, isUnknown } = event.detail;
+
+        // Check if the selected user is 'unknown'
+        if (isUnknown) {
+            // Set the current user to 'unknown'
+            currentUser.set('unknown');
+        } else {
+            // Set the current user to an object with the selected user's ID or username
+            currentUser.set(username);
+        }
     }
 
-    function handleUsersUpdated() {
-        fetchUsers();
+    // Function to switch between different views in the application
+    function setView(view) {
+        // Update the activeView variable to the new view
+        activeView = view;
     }
 
-    async function fetchUsers() {
-        try {
-            const response = await fetch('/users');
-            if (response.ok) {
-                users = await response.json();
-            }
-        } catch (error) {
-            console.error('Error fetching users:', error);
+    // Function to refresh the users list
+    function refreshUsers() {
+        // Call the refresh function from UserSelector
+        if (userSelectorRefresh) {
+            userSelectorRefresh();
+            console.log('Refreshing user list...');
         }
     }
 </script>
 
+<!-- Set the page title in the document head -->
+<svelte:head>
+    <title>Polling App</title>
+</svelte:head>
+
+<!-- Main container for the application -->
 <main>
-    <h1>Sistema de Encuestas - DAT250</h1>
+    <!-- Header section containing the title and user selector -->
+    <header>
+        <!-- Main heading for the application -->
+        <h1>Polling Application</h1>
 
-    <!-- Selector de usuarios -->
-    <UserSelector
-            bind:selectedUser
-            bind:users
-            on:usersUpdated={handleUsersUpdated}
-    />
+        <!-- User selection component-->
+        <UserSelector on:select={handleUserSelect} bind:refreshUsers={userSelectorRefresh} />
+    </header>
 
-    <nav class="navigation">
-        <button class:active={currentView === 'user'} on:click={() => currentView = 'user'}>
-            Create user
-        </button>
-        <button
-                class:active={currentView === 'poll'}
-                on:click={() => {
-                if (selectedUser === '') {
-                    alert('User needed to create polls');
-                    return;
-                }
-                currentView = 'poll';
-            }}
-                disabled={selectedUser === ''}
+    <!-- Navigation tabs for switching between different application views -->
+    <nav class="tabs">
+        <!-- Button to navigate to the Create Users view -->
+        <button class="vanner-button"
+                class:active={activeView === 'users'}
+                on:click={() => setView('users')}
         >
-            Polls
+            Create Users
         </button>
-        <button class:active={currentView === 'vote'} on:click={() => currentView = 'vote'}>
+
+        <!-- Button to navigate to the Create Polls view -->
+        <button class="vanner-button"
+                class:active={activeView === 'polls'}
+                on:click={() => setView('polls')}
+        >
+            Create Polls
+        </button>
+
+        <!-- Button to navigate to the Vote view -->
+        <button class="vanner-button"
+                class:active={activeView === 'vote'}
+                on:click={() => setView('vote')}
+        >
             Vote
         </button>
     </nav>
 
+    <!-- Container for the main content that changes based on the active view -->
     <div class="content">
-        {#if currentView === 'user'}
-            <CreateUser on:userCreated={handleUserCreated} {selectedUser} />
-        {:else if currentView === 'poll'}
-            <CreatePoll {selectedUser} {users} />
+        <!-- Conditionally render the CreateUsers component when activeView is 'users' -->
+        {#if activeView === 'users'}
+            <CreateUsers on:user-created={refreshUsers} />
+
+            <!-- Conditionally render the CreatePolls component when activeView is 'polls' -->
+        {:else if activeView === 'polls'}
+            <CreatePolls />
+
+            <!-- Conditionally render the VotePolls component for any other activeView value -->
         {:else}
-            <Vote {selectedUser} {users} />
+            <VotePolls />
         {/if}
     </div>
 </main>
-
-<style>
-    main {
-        max-width: 1000px;
-        margin: 0 auto;
-        padding: 20px;
-        font-family: Arial, sans-serif;
-    }
-
-    .navigation {
-        display: flex;
-        justify-content: center;
-        margin-bottom: 30px;
-        gap: 10px;
-    }
-
-    .navigation button {
-        padding: 12px 20px;
-        border: 2px solid #007acc;
-        background: white;
-        color: #007acc;
-        cursor: pointer;
-        border-radius: 5px;
-        font-weight: bold;
-        transition: all 0.3s;
-    }
-
-    .navigation button:hover:not(:disabled) {
-        background: #007acc;
-        color: white;
-    }
-
-    .navigation button.active {
-        background: #007acc;
-        color: white;
-    }
-
-    .navigation button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        border-color: #ccc;
-        color: #ccc;
-    }
-
-    .content {
-        min-height: 400px;
-    }
-
-    h1 {
-        text-align: center;
-        color: #333;
-        margin-bottom: 30px;
-    }
-</style>

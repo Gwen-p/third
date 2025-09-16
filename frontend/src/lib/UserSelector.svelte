@@ -1,84 +1,126 @@
+<!-- lib/UserSelector.svelte -->
 <script>
+    // Import Svelte lifecycle functions
+    import { onMount } from 'svelte';
 
-    export let selectedUser = '';
-    export let users = [];
-    let loading = false;
+    // Import API configuration
+    import { API_BASE } from '../config.js';
+
+    // Import Svelte event dispatcher
+    import { createEventDispatcher } from 'svelte';
+
+    // Create event dispatcher
+    const dispatch = createEventDispatcher();
+
+    // Reactive variable to store all users
+    let users = [];
+
+    // Reactive variable for loading state
+    let isLoading = false;
+
+    // Reactive variable for error messages
     let error = '';
 
+    // Prop for refresh function from parent
+    export let refreshUsers;
+
+    // Function to fetch all users from backend
     async function fetchUsers() {
-        loading = true;
+        // Set loading state to true
+        isLoading = true;
+
+        // Clear any previous errors
         error = '';
+
         try {
-            const response = await fetch(`/users`);
+            // Send GET request to users API endpoint using API_BASE
+            const response = await fetch(`${API_BASE}/users`);
+
+            // Check if response is successful
             if (response.ok) {
+                // Parse response JSON data
                 users = await response.json();
             } else {
-                error = 'Error charging users';
+                // Set error message if response is not successful
+                error = 'Failed to load users. Please try again.';
+                console.error('Failed to fetch users:', response.status);
             }
         } catch (err) {
-            error = 'Connection error';
+            // Set error message for network errors
+            error = 'Network error. Please check your connection.';
+            console.error('Error fetching users:', err);
+        } finally {
+            // Set loading state to false regardless of outcome
+            isLoading = false;
         }
-        loading = false;
     }
 
-    $: if (users.length === 0) {
-        fetchUsers();
+    // Function to handle user selection change
+    function handleChange(event) {
+        // Get the selected value from the dropdown
+        const selectedValue = event.target.value;
+
+        // find user if it is not unknow
+        let selectedUser = null;
+        if (selectedValue !== 'unknown') {
+            selectedUser = users.find(user => user.username === selectedValue);
+        }
+
+        dispatch('select', {
+            username: selectedValue,
+            email: selectedUser,
+            isUnknown: selectedValue === 'unknown'
+        });
     }
+
+    export let autoFetch = true;
+
+    // Assign fetchUsers to the refreshUsers prop for parent to call
+    $: refreshUsers = fetchUsers;
+
+    // Modify the onMount
+    onMount(() => {
+        if (autoFetch) {
+            fetchUsers();
+        }
+    });
+
+    // Expose fetchUsers to parent component
+    $: refreshUsers = fetchUsers;
 </script>
 
 <div class="user-selector">
-    <label>
-        Actual user:
-        <select bind:value={selectedUser}>
-            <option value="">Unknown</option>
-            {#each users as user}
-                <option value={user.username}>{user.username} ({user.email})</option>
-            {/each}
+    <label for="user-select">Select User:</label>
+
+    <!-- Display loading state -->
+    {#if isLoading}
+        <select id="user-select" disabled>
+            <option>Loading users...</option>
         </select>
-    </label>
 
-    {#if loading}
-        <span class="loading">Charging users...</span>
+        <!-- Display error state -->
+    {:else if error}
+        <select id="user-select" disabled>
+            <option>{error}</option>
+        </select>
+        <button on:click={fetchUsers} class="btn-secondary">Retry</button>
+
+        <!-- Display users dropdown -->
+    {:else}
+        <select id="user-select" on:change={handleChange}>
+            <option value="unknown" selected>Unknown</option>
+
+            <!-- Check if users array is not empty -->
+            {#if users && users.length > 0}
+                <!-- Iterate over users array to create options -->
+                {#each users as user (user.username)}
+                    <option value={user.username}>
+                        {user.username}
+                    </option>
+                {/each}
+            {:else}
+                <option disabled>No users available</option>
+            {/if}
+        </select>
     {/if}
-
-    {#if error}
-        <span class="error">{error}</span>
-    {/if}
-
-    <button on:click={fetchUsers} title="Refresh users">Refresh</button>
 </div>
-
-<style>
-    .user-selector {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 20px;
-        padding: 10px;
-        background-color: #f5f5f5;
-        border-radius: 5px;
-    }
-
-    select {
-        padding: 5px;
-        border: 1px solid #ccc;
-        border-radius: 3px;
-    }
-
-    .loading {
-        color: #666;
-        font-style: italic;
-    }
-
-    .error {
-        color: red;
-    }
-
-    button {
-        padding: 5px 10px;
-        border: 1px solid #ccc;
-        background: white;
-        border-radius: 3px;
-        cursor: pointer;
-    }
-</style>

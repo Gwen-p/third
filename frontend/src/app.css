@@ -1,0 +1,330 @@
+/* Global reset and base styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f4f4f4;
+    padding: 20px;
+}
+
+/* Main container styles */
+main {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Header styles */
+header {
+    text-align: center;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+h1 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+}
+
+h2 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+h3 {
+    margin: 0;
+}
+
+/* User selection styles */
+.user-selection {
+    margin-bottom: 15px;
+}
+
+.user-selection label {
+    margin-right: 10px;
+    font-weight: bold;
+}
+
+.user-selection select {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Navigation tabs styles */
+.tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #ddd;
+}
+
+.tabs button {
+    padding: 10px 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    margin: 0 5px;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.tabs button.active {
+    border-bottom-color: #4CAF50;
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.tabs button:hover {
+    background-color: #f0f0f0;
+}
+
+/* Content area styles */
+.content {
+    min-height: 300px;
+}
+
+/* Component container styles */
+.component {
+    padding: 15px;
+}
+
+/* Form styles */
+.form-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+input[type="text"] {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+    max-width: 300px;
+}
+
+input[type="email"] {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+    max-width: 300px;
+}
+
+input[type="radio"] {
+    margin-right: 10px;
+}
+
+/* Button styles */
+button {
+    padding: 8px 16px;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+
+.vanner-button{
+    padding: 8px 16px;
+    color: #2c3e50;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+
+.btn-primary {
+    background-color: #4CAF50;
+}
+
+.btn-primary:hover {
+    background-color: #45a049;
+}
+
+.btn-secondary {
+    background-color: #2196F3;
+}
+
+.btn-secondary:hover {
+    background-color: #0b7dda;
+}
+
+.btn-remove {
+    background-color: #f44336;
+    padding: 5px 10px;
+}
+
+.btn-remove:hover {
+    background-color: #d32f2f;
+}
+
+/* Option group styles */
+.option-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.option-group input {
+    margin-bottom: 0;
+    margin-right: 10px;
+}
+
+/* Message styles */
+.success {
+    color: green;
+    margin-top: 10px;
+}
+
+.error {
+    color: red;
+    margin-top: 10px;
+}
+
+/* Poll styles */
+.poll {
+    border: 1px solid #56cd60;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    background-color: #f9f9f9;
+}
+
+.poll-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+/* Option styles */
+.option {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 8px;
+    background-color: rgba(76, 175, 80, 0.8);
+    border-radius: 4px;
+}
+
+.option label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    margin-bottom: 0;
+    font-weight: normal;
+}
+
+.vote-count {
+    font-size: 0.9em;
+    color: #666;
+}
+
+.current-selection {
+    margin-top: 10px;
+    font-style: italic;
+    color: #4CAF50;
+}
+
+/* UserSelector styles */
+.user-selector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.user-selector label {
+    margin-right: 10px;
+    font-weight: bold;
+    margin-bottom: 0;
+}
+
+.user-selector select {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    min-width: 200px;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+
+    main {
+        padding: 15px;
+    }
+
+    .tabs {
+        flex-direction: column;
+    }
+
+    .tabs button {
+        margin: 5px 0;
+    }
+
+    .poll-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .btn-remove {
+        margin-top: 10px;
+    }
+
+    .option {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .vote-count {
+        margin-top: 5px;
+    }
+
+    input[type="text"] {
+        max-width: 100%;
+    }
+
+    .user-selector {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .user-selector label {
+        margin-right: 0;
+        margin-bottom: 5px;
+        text-align: center;
+    }
+
+    .user-selector select {
+        min-width: unset;
+        width: 100%;
+    }
+}
