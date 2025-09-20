@@ -87,7 +87,7 @@ public class PollService {
         if(userId == null){
             vote = new Vote(null, getPoll(pollId).getOption(optionId));
         }else {
-            vote = new Vote(getUser(userId), getPoll(pollId).getOption(optionId));
+            vote = getUser(userId).voteFor(getPoll(pollId).getOption(optionId));
         }
         vote.setId(votesId);
         votesId++;

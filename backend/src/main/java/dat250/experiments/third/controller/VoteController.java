@@ -39,10 +39,16 @@ public class VoteController {
     // Create a vote
     @PostMapping("/{pollId}/{option}/{userName}")
     public Vote createUserVote(@PathVariable int pollId, @PathVariable int option ,@PathVariable String userName) {
+        Poll poll = pollService.getPoll(pollId);
         if(pollService.getUser(userName) == null){ // if user does not exist
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
         }
-        Poll poll = pollService.getPoll(pollId);
+        else{
+            if(pollService.getUser(userName).getMyVotes().stream().anyMatch(v -> v.getOption().getCaption().equals(poll.getOption(option).getCaption()))){
+                // if a user has already vote
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username already voted");
+            }
+        }
         if(poll==null){ //if poll does not exist
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Poll not found");
         }
@@ -52,10 +58,8 @@ public class VoteController {
         if(poll.getOption(option)==null){ // if option does not exist
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Option not found");
         }
-        if(pollService.getVotes(pollId).stream().anyMatch(v -> v.getUser().getUsername().equals(userName))){
-            // if a user has already vote
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username already voted");
-        }
+
+
         return pollService.addVote(userName, pollId, option);
     }
 

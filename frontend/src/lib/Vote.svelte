@@ -1,269 +1,1 @@
-<!-- lib/Vote.svelte -->
-<script>
-    // Import API configuration
-    import { getContext } from 'svelte';
-    import { API_BASE } from '../config.js';
-
-    const currentUser = getContext('currentUser');
-
-    // Reactive variable to store polls data
-    let polls = [];
-
-    // Reactive variable to store user's current selections
-    let selections = {};
-
-    // Reactive variable for loading state
-    let isLoading = false;
-    let loadingPolls = false;
-
-    // Function to fetch polls from backend
-    async function fetchPolls() {
-        loadingPolls = true;
-        try {
-            // Send GET request to polls API endpoint using API_BASE
-            const response = await fetch(`${API_BASE}/polls`);
-
-            // Check if response is successful
-            if (response.ok) {
-                // Parse response JSON data
-                polls = await response.json();
-                console.log('Polls loaded:', polls);
-            } else {
-                // Log error if response is not successful
-                console.error('Failed to fetch polls');
-            }
-        } catch (error) {
-            // Log any network errors
-            console.error('Error fetching polls:', error);
-        } finally {
-            loadingPolls = false;
-        }
-    }
-
-    // Function to handle voting
-    async function vote(pollId, optionIndex) {
-        // Set loading state to true
-        isLoading = true;
-
-        try {
-            // Determine if user is unknown or registered
-            const isUnknownUser = $currentUser === 'unknown';
-
-            let response;
-
-            if (isUnknownUser) {
-                // Anonymous vote - use endpoint: /votes/{pollId}/{option}
-                response = await fetch(`${API_BASE}/votes/${pollId}/${optionIndex}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-            } else {
-                // Registered user vote - use endpoint: /votes/{pollId}/{option}/{userName}
-                response = await fetch(`${API_BASE}/votes/${pollId}/${optionIndex}/${$currentUser}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-            }
-
-            // Check if response is successful
-            if (response.ok) {
-                // Parse response JSON data
-                const newVote = await response.json();
-                console.log('Vote successful:', newVote);
-
-                // Update selection for the poll
-                selections[pollId] = optionIndex;
-
-                // Refresh polls data to get updated vote counts
-                fetchPolls();
-
-                alert('Vote recorded successfully!');
-            } else {
-                // Parse error response
-                const error = await response.json();
-
-                // Show error message
-                alert(error.message || 'Failed to vote!');
-                console.error('Vote failed:', error);
-            }
-        } catch (error) {
-            // Log any network errors
-            console.error('Error voting:', error);
-            alert('Network error. Please try again.');
-        } finally {
-            // Set loading state to false regardless of outcome
-            isLoading = false;
-        }
-    }
-
-    // Function to delete a poll (only for poll creator)
-    async function deletePoll(pollId) {
-        // Confirm deletion
-        if (!confirm('Are you sure you want to delete this poll?')) return;
-
-        // Set loading state to true
-        isLoading = true;
-
-        try {
-            // Send DELETE request to poll API endpoint using API_BASE
-            const response = await fetch(`${API_BASE}/polls/${pollId}`, {
-                method: 'DELETE'
-            });
-
-            // Check if response is successful
-            if (response.ok) {
-                // Remove the poll from local state
-                polls = polls.filter(poll => poll.id !== pollId);
-
-                // Remove selection for deleted poll
-                delete selections[pollId];
-
-                alert('Poll deleted successfully!');
-            } else {
-                // Parse error response
-                const error = await response.json();
-
-                // Show error message
-                alert(error.message || 'Failed to delete poll!');
-            }
-        } catch (error) {
-            // Log any network errors
-            console.error('Error deleting poll:', error);
-            alert('Network error. Please try again.');
-        } finally {
-            // Set loading state to false regardless of outcome
-            isLoading = false;
-        }
-    }
-
-    // Function to get vote count for a specific option
-    function getVoteCount(option) {
-        // Count votes based on the votes array in the option
-        return option.votes ? option.votes.length : 0;
-    }
-
-    // Function to check if current user is the creator of a poll
-    function isPollCreator(poll) {
-        // For unknown users, always return false (unknown users can't create polls)
-        if ($currentUser === 'unknown') {
-            return false;
-        }
-
-        // For registered users, check if they created the poll
-        return poll.creator === $currentUser;
-    }
-
-    // Function to check if poll is expired
-    function isPollExpired(poll) {
-        const validUntil = new Date(poll.validUntil);
-        const now = new Date();
-        return now > validUntil;
-    }
-
-    // Function to check if user has already voted in a poll
-    function hasUserVoted(poll) {
-        if ($currentUser === 'unknown') {
-            // For anonymous users, we can't track votes across sessions
-            return selections[poll.id] !== undefined;
-        }
-
-        // For registered users, check if any option has their vote
-        return poll.options.some(option =>
-                option.votes && option.votes.some(vote =>
-                    typeof vote === 'object' ? vote.user === $currentUser : false
-                )
-        );
-    }
-
-    // Load data when component is mounted
-    fetchPolls();
-</script>
-
-<div class="component">
-    <h2>Vote on Polls</h2>
-
-    <!-- Display loading message if data is being fetched -->
-    {#if loadingPolls}
-        <p>Loading polls...</p>
-    {:else if polls.length === 0}
-        <p>No polls available. Create some polls first!</p>
-    {:else}
-        <!-- Iterate over each poll -->
-        {#each polls as poll (poll.id)}
-            <div class="poll" class:expired={isPollExpired(poll)}>
-                <div class="poll-header">
-                    <h3>{poll.question}</h3>
-
-                    <!-- Show delete button if user is the creator of the poll -->
-                    {#if isPollCreator(poll)}
-                        <button on:click={() => deletePoll(poll.id)} class="btn-remove" disabled={isLoading}>
-                            {isLoading ? 'Deleting...' : 'Delete Poll'}
-                        </button>
-                    {/if}
-                    <div class="poll-meta">
-                        <span class="creator">By: {poll.creator}</span>
-                        <p><span class="valid-until">Valid until: {new Date(poll.validUntil).toLocaleDateString()}</span></p>
-                            {#if isPollExpired(poll)}
-                            <span class="expired-badge">EXPIRED</span>
-                        {/if}
-                    </div>
-
-                </div>
-
-                <!-- Show message if poll is expired -->
-                {#if isPollExpired(poll)}
-                    <p class="expired-message">This poll has expired and can no longer be voted on.</p>
-                {:else if hasUserVoted(poll)}
-                    <p class="already-voted">You have already voted in this poll.</p>
-                {/if}
-
-                <!-- Iterate over each option in the poll -->
-                {#each poll.options as option, index (index)}
-                    <div class="option">
-                        <label>
-                            <input
-                                    type="radio"
-                                    name={`poll-${poll.id}`}
-                                    value={index}
-                                    checked={selections[poll.id] === index}
-                                    on:change={() => vote(poll.id, index + 1)}
-                                    disabled={isLoading || isPollExpired(poll) || hasUserVoted(poll)}
-                            />
-                            {option.caption}
-                        </label>
-
-                        <!-- Display vote count for this option -->
-                        <span class="vote-count">({getVoteCount(option)} votes)</span>
-
-                        <!-- Show vote timeline if available -->
-                        {#if option.votes && option.votes.length > 0}
-                            <div class="vote-timeline">
-                                {#each option.votes as voteTimestamp (voteTimestamp)}
-                                    <span class="vote-time">
-                                        {new Date(voteTimestamp).toLocaleTimeString()}
-                                    </span>
-                                {/each}
-                            </div>
-                        {/if}
-                    </div>
-                {/each}
-
-                <!-- Display current selection if exists -->
-                {#if selections[poll.id] !== undefined && !isPollExpired(poll)}
-                    <p class="current-selection">
-                        Your current selection: {poll.options[selections[poll.id]].caption}
-                    </p>
-                {/if}
-
-                <!-- Total votes for this poll -->
-                <div class="total-votes">
-                    Total votes: {poll.options.reduce((total, option) => total + getVoteCount(option), 0)}
-                </div>
-            </div>
-        {/each}
-    {/if}
-</div>
+<script>    import { getContext } from 'svelte'; // import Svelte helper to read context values    import { API_BASE } from '../config.js'; // import API base URL from config    const currentUser = getContext('currentUser'); // read 'currentUser' from Svelte context (likely a store or value)    let polls = []; // reactive array to hold polls retrieved from the backend    let selections = {}; // object that maps pollId -> selected option index (0-based) for UI state    let isLoading = false; // boolean flag used to indicate an ongoing action (vote/delete)    let loadingPolls = false; // boolean flag used while fetching all polls    async function fetchPolls() { // function to fetch all polls from API        loadingPolls = true; // set flag to indicate polls are being loaded        try {            const response = await fetch(`${API_BASE}/polls`); // send GET request to /polls            if (response.ok) { // if server responded with 200-299                selections = {};                polls = await response.json(); // parse response JSON and assign to polls            }        } finally {            loadingPolls = false; // always clear the loading flag when finished or when error happens        }    }    async function vote(pollId, optionIndex) { // function to submit a vote; optionIndex is expected as 1-based here        isLoading = true; // set global action-loading flag to true        try {            const isUnknown = $currentUser === 'unknown'; // check whether current user is 'unknown' (anonymous)            let response; // variable to hold fetch response            if (isUnknown) { // anonymous user path                response = await fetch(`${API_BASE}/votes/${pollId}/${optionIndex}`, {                    method: 'POST' // POST to anonymous vote endpoint                });            } else { // registered user path                response = await fetch(`${API_BASE}/votes/${pollId}/${optionIndex}/${$currentUser}`, {                    method: 'POST' // POST to vote endpoint that records the user                });            }            if (response.ok) { // if vote succeeded                await fetchPolls(); // refresh polls to show updated counts                if (!isUnknown) { // store selection locally only for registered users                    selections[pollId] = optionIndex - 1; // convert 1-based optionIndex to 0-based index for the UI                }            } else { // if server returned an error status                const error = await response.json(); // try to parse the error response body                alert(error.status + ' Error while voting'); // show an alert with server message or generic text            }        } catch (err) { // network or unexpected error            console.error('Network error voting:', err); // log the error for debugging            alert('Network error. Please try again.'); // notify the user        } finally {            isLoading = false; // always clear the action-loading flag        }    }    async function deletePoll(pollId) { // function to delete a poll (should be allowed only for its creator)        if (!confirm('¿Eliminar encuesta?')) return; // ask the user to confirm deletion, bail out if cancelled        isLoading = true; // set loading flag while deletion is in progress        try {            const response = await fetch(`${API_BASE}/polls/${pollId}`, {                method: 'DELETE' // DELETE request to /polls/:id endpoint            });            if (response.ok) { // if deletion succeeded                polls = polls.filter(p => p.id !== pollId); // remove the deleted poll from local array                delete selections[pollId]; // remove any stored selection for that poll in local state            } else { // if deletion failed on the server                const error = await response.json(); // parse error response                alert(error.status + ' Failed to delete poll'); // show an alert with error information            }        } catch (err) { // network or unexpected error            console.error('Network error deleting poll:', err); // log it for debugging            alert('Network error. Please try again.'); // notify the user        } finally {            isLoading = false; // clear the loading flag        }    }    function getVoteCount(option) { // helper that returns the number of votes for a single option        return option.votes ? option.votes.length : 0; // if `votes` exists return its length, otherwise return 0    }    function isPollCreator(poll) { // helper that checks if current user is the poll's creator        return $currentUser !== 'unknown' && poll.creator === $currentUser; // unknown can't be a creator; otherwise compare creator field    }    async function hasUserVoted(pollId) {        if ($currentUser === 'unknown') return false;        try {            const response = await fetch(`${API_BASE}/votes/${pollId}`, {                method: 'GET'            });            if (response.ok) {                const votes = await response.json();                return votes?.some(v => v.user === $currentUser) || false;            } else { // if deletion failed on the server                const error = await response.json(); // parse error response                alert(error.status + ' Failed to delete poll'); // show an alert with error information            }        } catch (error) {            console.error('Error checking vote:', error);            return false;        }    }    // helper that returns the caption of the option the current user voted for, or null    async function getUserVote(pollId) {        if ($currentUser === 'unknown') return null;        try {            const response = await fetch(`${API_BASE}/votes/${pollId}`, {                method: 'GET' // DELETE request to /polls/:id endpoint            });            if (response.ok) {                const votes = await response.json();                // Encontrar el voto específico del usuario actual                const userVote = votes.find(v => v.user.name === $currentUser);                // Devolver el caption de la opción votada o null                return userVote ? userVote.optionCaption : null;            } else {                const error = await response.json();                alert(error.status + ' Failed to fetch user vote');                return null;            }        } catch (error) {            console.error('Error fetching user vote:', error);            return null;        }    /*    if ($currentUser === 'unknown') return null; // anonymous users have no tracked vote        for (const option of poll.options) { // iterate options to find the one containing the user's vote            if (option.votes?.some(vote => vote?.user === $currentUser)) {                return option.caption; // return the matching option caption            }        }        return null; // if no vote found for this user return null    */    }    fetchPolls(); // initial call to load polls when component is mounted</script><div class="component">    <h2>Vote on Polls</h2>    {#if loadingPolls}        <p>Loading polls...</p>    {:else if polls.length === 0}        <p>No polls available. Create some polls first!</p>    {:else}        {#each polls as poll (poll.id)}            <div class="poll">                <h3>{poll.question}</h3> <!-- display the poll question -->                {#if isPollCreator(poll)} <!-- if current user created this poll -->                    <button on:click={() => deletePoll(poll.id)} disabled={isLoading}>                        {isLoading ? 'Deleting...' : 'Delete Poll'}                    </button> <!-- show delete button and disable it while an action is in progress -->                {/if}                <div class="poll-meta"> <!-- metadata area for the poll -->                    <span class="creator">By: {poll.creator}</span> <!-- display poll creator -->                </div>                {#each poll.options as option, index (index)} <!-- iterate over options for this poll -->                    <div class="option"> <!-- container for one option -->                        <label>                            <input                                    type="radio"                                    name={`poll-${poll.id}`}                                    value={index}                                    checked={selections[poll.id] === index}                                    on:click={() => vote(poll.id, index + 1)}                                    disabled={isLoading}                            />                            {option.caption} <!-- show option text -->                        </label>                        <span class="vote-count">({getVoteCount(option)} votes)</span> <!-- show number of votes for this option -->                        {#if option.votes && option.votes.length > 0} <!-- if this option has vote entries -->                            <div class="vote-timeline"> <!-- optional timeline / list of votes -->                                {#each option.votes as voteObj, i (i)} <!-- iterate votes; voteObj may be null-or-object -->                                    <span class="vote-time">                                        <!-- show time if voteObj contains a timestamp property, otherwise try to format raw value -->                                        {#if typeof voteObj === 'object' && voteObj?.time}                                            {new Date(voteObj.time).toLocaleTimeString()}                                        {:else}                                            {new Date(voteObj).toLocaleTimeString()}                                        {/if}                                    </span>                                {/each}                            </div>                        {/if}                    </div>                {/each}                {#if $currentUser !== 'unknown' && hasUserVoted(poll.id)} <!-- if a registered user and they have voted -->                    <p>Your vote: {getUserVote(poll.id)}</p> <!-- show the option caption they voted for -->                    <small>You can change it by selecting another option.</small> <!-- hint that they can modify their vote -->                {/if}                {#if $currentUser === 'unknown'} <!-- if the viewer is anonymous -->                    <p><em>Unknown user: you can vote multiple times.</em></p> <!-- explain unlimited voting for unknown -->                {/if}                <div class="total-votes"> <!-- display total votes for this poll -->                    Total votes: {poll.options.reduce((t, o) => t + getVoteCount(o), 0)}                </div>            </div>        {/each}    {/if}</div>
